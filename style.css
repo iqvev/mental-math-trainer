@@ -1,0 +1,56 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  background: #f4f4f4;
+}
+
+#startScreen, #gameScreen, #gameOverScreen {
+  margin-top: 80px;
+}
+
+h1 {
+  font-size: 32px;
+}
+
+h2 {
+  font-size: 40px;
+  margin: 20px 0;
+}
+
+input {
+  padding: 10px;
+  font-size: 18px;
+  width: 120px;
+  text-align: center;
+  margin-top: 10px;
+}
+
+button {
+  padding: 10px 15px;
+  margin: 6px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+.selected {
+  background: #222;
+  color: white;
+}
+
+#gameScreen, #gameOverScreen {
+  background: white;
+  display: inline-block;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
