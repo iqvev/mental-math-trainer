@@ -1,102 +1,53 @@
-<script src="script.js?v=2"></script>
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-  <title>Mental Maths Trainer</title>
+  <title>Mental Maths Game</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- ================= START SCREEN ================= -->
 <div id="startScreen" class="screen">
+  <h1>Mental Maths</h1>
 
-  <div class="card">
+  <input id="playerName" placeholder="Enter name">
 
-    <h1>Mental Maths Trainer</h1>
+  <button onclick="setDifficulty('easy', this)">Easy</button>
+  <button onclick="setDifficulty('normal', this)">Normal</button>
+  <button onclick="setDifficulty('hard', this)">Hard</button>
+  <button onclick="setDifficulty('extreme', this)">Extreme</button>
+  <button onclick="setDifficulty('insane', this)">Insane</button>
 
-    <input id="playerName" type="text" placeholder="Enter your name">
+  <br><br>
 
-    <p>Select difficulty</p>
-
-    <button onclick="setDifficulty('easy', this)">Easy</button>
-    <button onclick="setDifficulty('normal', this)">Normal</button>
-    <button onclick="setDifficulty('hard', this)">Hard</button>
-    <button onclick="setDifficulty('extreme', this)">Extreme</button>
-    <button onclick="setDifficulty('insane', this)">Insane</button>
-
-    <br><br>
-
-    <button onclick="startGame()">Start Game</button>
-
-    <button onclick="showScreen('leaderboardScreen')">
-      Leaderboard
-    </button>
-
-  </div>
-
+  <button onclick="startGame()">Start</button>
+  <button onclick="showLeaderboard()">Leaderboard</button>
 </div>
 
-<!-- ================= GAME SCREEN ================= -->
 <div id="gameScreen" class="screen" style="display:none;">
+  <h2 id="question"></h2>
 
-  <div class="card">
+  <input id="answer" onkeydown="handleKey(event)">
 
-    <p id="timer">Time: 60</p>
-    <p id="score">Score: 0</p>
+  <button onclick="checkAnswer()">Submit</button>
 
-    <h2 id="question"></h2>
-
-    <input id="answer" type="number" onkeydown="handleKeyPress(event)">
-
-    <br><br>
-
-    <button onclick="checkAnswer()">Submit</button>
-
-    <p id="result"></p>
-
-  </div>
-
+  <p id="timer"></p>
+  <p id="score"></p>
+  <p id="result"></p>
 </div>
 
-<!-- ================= GAME OVER ================= -->
-<div id="gameOverScreen" class="screen" style="display:none;">
-
-  <div class="card">
-
-    <h1>Game Over</h1>
-
-    <p id="finalScore"></p>
-
-    <button onclick="backToMenu()">Back To Menu</button>
-
-  </div>
-
+<div id="endScreen" class="screen" style="display:none;">
+  <h2>Game Over</h2>
+  <p id="finalScore"></p>
+  <button onclick="backToMenu()">Back</button>
 </div>
 
-<!-- ================= LEADERBOARD ================= -->
 <div id="leaderboardScreen" class="screen" style="display:none;">
-
-  <div class="card">
-
-    <h2 id="leaderboardTitle">Leaderboard</h2>
-
-    <div id="leaderboardList">
-      No scores yet.
-    </div>
-
-    <br>
-
-    <button onclick="backToMenu()">Back To Menu</button>
-
-  </div>
-
+  <h2 id="leaderboardTitle"></h2>
+  <div id="leaderboardList"></div>
+  <button onclick="backToMenu()">Back</button>
 </div>
-
-<!-- ================= FIREBASE ================= -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
@@ -104,5 +55,4 @@
 <script src="script.js"></script>
 
 </body>
-
 </html>
