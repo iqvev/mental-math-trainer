@@ -18,37 +18,37 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 /* =========================
-   GAME STATE
+   STATE
 ========================= */
 
 let playerName = "";
 let difficulty = "normal";
-
-let score = 0;
-let timeLeft = 60;
-let gameRunning = false;
+let selectedBtn = null;
 
 let num1 = 0;
 let num2 = 0;
-let answer = 0;
+let correct = 0;
 
-let countdown = null;
-let selectedButton = null;
+let score = 0;
+let timeLeft = 60;
+let running = false;
+
+let timer;
 
 /* =========================
-   SCREEN SYSTEM
+   SCREENS
 ========================= */
 
-function showScreen(screen) {
+function showScreen(name) {
 
   document.getElementById("startScreen").style.display = "none";
   document.getElementById("gameScreen").style.display = "none";
-  document.getElementById("gameOverScreen").style.display = "none";
+  document.getElementById("endScreen").style.display = "none";
   document.getElementById("leaderboardScreen").style.display = "none";
 
-  document.getElementById(screen).style.display = "block";
+  document.getElementById(name).style.display = "block";
 
-  if (screen === "leaderboardScreen") {
+  if (name === "leaderboardScreen") {
     loadLeaderboard();
   }
 }
@@ -61,22 +61,22 @@ function backToMenu() {
    DIFFICULTY
 ========================= */
 
-function setDifficulty(level, button) {
+function setDifficulty(level, btn) {
 
   difficulty = level;
 
-  if (selectedButton) {
-    selectedButton.classList.remove("selected");
+  if (selectedBtn) {
+    selectedBtn.classList.remove("selected");
   }
 
-  if (button) {
-    button.classList.add("selected");
-    selectedButton = button;
+  if (btn) {
+    btn.classList.add("selected");
+    selectedBtn = btn;
   }
 }
 
 /* =========================
-   RANGE SYSTEM
+   RANGE
 ========================= */
 
 function getRange() {
@@ -94,14 +94,14 @@ function getRange() {
    QUESTION
 ========================= */
 
-function generateQuestion() {
+function newQuestion() {
 
-  let range = getRange();
+  let r = getRange();
 
-  num1 = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
-  num2 = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
+  num1 = Math.floor(Math.random() * (r[1] - r[0] + 1)) + r[0];
+  num2 = Math.floor(Math.random() * (r[1] - r[0] + 1)) + r[0];
 
-  answer = num1 * num2;
+  correct = num1 * num2;
 
   document.getElementById("question").innerText =
     num1 + " × " + num2;
@@ -116,29 +116,29 @@ function startGame() {
   playerName = document.getElementById("playerName").value.trim();
 
   if (!playerName) {
-    alert("Enter your name");
+    alert("Enter name");
     return;
   }
 
   score = 0;
   timeLeft = 60;
-  gameRunning = true;
+  running = true;
 
-  document.getElementById("score").innerText = "0";
-  document.getElementById("timer").innerText = "60";
+  document.getElementById("score").innerText = "Score: 0";
+  document.getElementById("timer").innerText = "Time: 60";
   document.getElementById("result").innerText = "";
 
   showScreen("gameScreen");
 
-  generateQuestion();
+  newQuestion();
 
   document.getElementById("answer").value = "";
   document.getElementById("answer").focus();
 
-  countdown = setInterval(() => {
+  timer = setInterval(() => {
 
     timeLeft--;
-    document.getElementById("timer").innerText = timeLeft;
+    document.getElementById("timer").innerText = "Time: " + timeLeft;
 
     if (timeLeft <= 0) {
       endGame();
@@ -148,36 +148,36 @@ function startGame() {
 }
 
 /* =========================
-   CHECK ANSWER
+   ANSWER
 ========================= */
 
 function checkAnswer() {
 
-  if (!gameRunning) return;
+  if (!running) return;
 
-  let user = Number(document.getElementById("answer").value);
+  let val = Number(document.getElementById("answer").value);
 
-  if (user === answer) {
+  if (val === correct) {
     score++;
     document.getElementById("result").innerText = "Correct";
   } else {
     document.getElementById("result").innerText = "Wrong";
   }
 
-  document.getElementById("score").innerText = score;
+  document.getElementById("score").innerText = "Score: " + score;
 
   document.getElementById("answer").value = "";
   document.getElementById("answer").focus();
 
-  generateQuestion();
+  newQuestion();
 }
 
 /* =========================
    ENTER KEY
 ========================= */
 
-function handleKey(event) {
-  if (event.key === "Enter") {
+function handleKey(e) {
+  if (e.key === "Enter") {
     checkAnswer();
   }
 }
@@ -188,15 +188,15 @@ function handleKey(event) {
 
 function endGame() {
 
-  clearInterval(countdown);
-  gameRunning = false;
+  clearInterval(timer);
+  running = false;
 
   saveScore();
 
   document.getElementById("finalScore").innerText =
     playerName + " scored " + score + " (" + difficulty + ")";
 
-  showScreen("gameOverScreen");
+  showScreen("endScreen");
 }
 
 /* =========================
@@ -227,29 +227,27 @@ async function saveScore() {
 async function loadLeaderboard() {
 
   document.getElementById("leaderboardTitle").innerText =
-    difficulty.charAt(0).toUpperCase() + difficulty.slice(1) + " Leaderboard";
+    difficulty.toUpperCase() + " LEADERBOARD";
 
   const ref = db.collection("leaderboards")
     .doc(difficulty)
     .collection("players");
 
-  const snapshot = await ref.get();
+  const snap = await ref.get();
 
-  let data = [];
+  let list = [];
 
-  snapshot.forEach(doc => {
-    data.push(doc.data());
-  });
+  snap.forEach(d => list.push(d.data()));
 
-  data.sort((a, b) => b.score - a.score);
+  list.sort((a, b) => b.score - a.score);
 
   let html = "";
 
-  if (data.length === 0) {
+  if (list.length === 0) {
     html = "No scores yet";
   } else {
 
-    let top = data.slice(0, 5);
+    let top = list.slice(0, 5);
 
     for (let i = 0; i < top.length; i++) {
       html += (i + 1) + ". " + top[i].name + " - " + top[i].score + "<br>";
@@ -257,4 +255,12 @@ async function loadLeaderboard() {
   }
 
   document.getElementById("leaderboardList").innerHTML = html;
+}
+
+/* =========================
+   LEADERBOARD BUTTON
+========================= */
+
+function showLeaderboard() {
+  showScreen("leaderboardScreen");
 }
