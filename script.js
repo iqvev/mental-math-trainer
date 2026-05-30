@@ -1,34 +1,72 @@
+const firebaseConfig = {
+  apiKey: "...",
+  authDomain: "...",
+  projectId: "...",
+  storageBucket: "...",
+  messagingSenderId: "...",
+  appId: "..."
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAtpDbBKib75RlsxEEN_pJkWedXE7MIx3Y",
+  authDomain: "mental-math-trainer-d5f31.firebaseapp.com",
+  projectId: "mental-math-trainer-d5f31",
+  storageBucket: "mental-math-trainer-d5f31.firebasestorage.app",
+  messagingSenderId: "84169678219",
+  appId: "1:84169678219:web:f53dc3f6f7b5a15783e38e"
+};
+
+////////////////////////////////////////////////////
+// 🔥 FIREBASE CONFIG ABOVE THIS LINE 🔥
+////////////////////////////////////////////////////
+
+const db = firebase.firestore();
+
+/* =========================
+   STATE
+========================= */
+
+let playerName = "";
+let difficulty = "normal";
+let gameRunning = false;
+
+let score = 0;
+let timeLeft = 60;
+let selectedButton = null;
+let countdown = null;
 
 let num1 = 0;
 let num2 = 0;
 let correctAnswer = 0;
 
-let score = 0;
-let timeLeft = 60;
-let gameRunning = false;
-
-let difficulty = "normal";
-let selectedButton = null;
-let countdown = null;
-
-let bestScores = {
-  easy: 0,
-  normal: 0,
-  hard: 0,
-  extreme: 0,
-  insane: 0
-};
-
-loadScores();
-showScreen("startScreen");
+/* =========================
+   SCREEN CONTROL
+========================= */
 
 function showScreen(screen) {
+
   document.getElementById("startScreen").style.display = "none";
   document.getElementById("gameScreen").style.display = "none";
   document.getElementById("gameOverScreen").style.display = "none";
+  document.getElementById("leaderboardScreen").style.display = "none";
 
   document.getElementById(screen).style.display = "block";
+
+  if (screen === "leaderboardScreen") {
+    renderLeaderboard();
+  }
 }
+
+function backToMenu() {
+  showScreen("startScreen");
+}
+
+/* =========================
+   DIFFICULTY
+========================= */
 
 function setDifficulty(level, button) {
 
@@ -42,21 +80,30 @@ function setDifficulty(level, button) {
 
   button.classList.add("selected");
   selectedButton = button;
-
-  updateBestUI();
 }
 
+/* =========================
+   RANGE SYSTEM
+========================= */
+
 function getRange() {
+
   if (difficulty === "easy") return [1, 10];
   if (difficulty === "normal") return [1, 20];
   if (difficulty === "hard") return [2, 50];
   if (difficulty === "extreme") return [10, 99];
   if (difficulty === "insane") return [100, 999];
+
+  return [1, 20];
 }
 
 function getNumber(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+/* =========================
+   QUESTION
+========================= */
 
 function generateQuestion() {
 
@@ -71,9 +118,18 @@ function generateQuestion() {
     "What is " + num1 + " x " + num2 + "?";
 }
 
+/* =========================
+   START GAME
+========================= */
+
 function startGame() {
 
-  if (countdown) clearInterval(countdown);
+  playerName = document.getElementById("playerName").value.trim();
+
+  if (playerName === "") {
+    alert("Enter a name");
+    return;
+  }
 
   score = 0;
   timeLeft = 60;
@@ -87,8 +143,9 @@ function startGame() {
 
   generateQuestion();
 
-  document.getElementById("answer").value = "";
-  document.getElementById("answer").focus();
+  let input = document.getElementById("answer");
+  input.value = "";
+  input.focus();
 
   countdown = setInterval(() => {
 
@@ -96,21 +153,32 @@ function startGame() {
     document.getElementById("timer").innerText = "Time: " + timeLeft;
 
     if (timeLeft <= 0) {
-
-      clearInterval(countdown);
-      gameRunning = false;
-
-      saveBestScore();
-      updateBestUI();
-
-      document.getElementById("finalScore").innerText =
-        "Score: " + score;
-
-      showScreen("gameOverScreen");
+      endGame();
     }
 
   }, 1000);
 }
+
+/* =========================
+   END GAME
+========================= */
+
+function endGame() {
+
+  clearInterval(countdown);
+  gameRunning = false;
+
+  saveScoreToFirebase();
+
+  document.getElementById("finalScore").innerText =
+    playerName + " scored " + score + " on " + difficulty;
+
+  showScreen("gameOverScreen");
+}
+
+/* =========================
+   ANSWER CHECK
+========================= */
 
 function checkAnswer() {
 
@@ -128,11 +196,16 @@ function checkAnswer() {
 
   document.getElementById("score").innerText = "Score: " + score;
 
-  document.getElementById("answer").value = "";
-  document.getElementById("answer").focus();
+  let input = document.getElementById("answer");
+  input.value = "";
+  input.focus();
 
   generateQuestion();
 }
+
+/* =========================
+   ENTER KEY SUPPORT
+========================= */
 
 function handleKeyPress(event) {
   if (event.key === "Enter") {
@@ -140,23 +213,67 @@ function handleKeyPress(event) {
   }
 }
 
-function backToMenu() {
-  showScreen("startScreen");
-}
+/* =========================
+   FIREBASE SAVE
+========================= */
 
-function saveBestScore() {
-  if (score > bestScores[difficulty]) {
-    bestScores[difficulty] = score;
-    localStorage.setItem("bestScores", JSON.stringify(bestScores));
+async function saveScoreToFirebase() {
+
+  const ref = db.collection("leaderboards")
+    .doc(difficulty)
+    .collection("players")
+    .doc(playerName);
+
+  const doc = await ref.get();
+
+  if (!doc.exists || score > doc.data().score) {
+    await ref.set({
+      name: playerName,
+      score: score
+    });
   }
 }
 
-function loadScores() {
-  let saved = localStorage.getItem("bestScores");
-  if (saved) bestScores = JSON.parse(saved);
-}
+/* =========================
+   FIREBASE LEADERBOARD
+========================= */
 
-function updateBestUI() {
-  document.getElementById("bestScore").innerText =
-    "Best: " + bestScores[difficulty];
+async function renderLeaderboard() {
+
+  document.getElementById("leaderboardTitle").innerText =
+    difficulty.charAt(0).toUpperCase() + difficulty.slice(1) + " Mode Leaderboard";
+
+  const ref = db.collection("leaderboards")
+    .doc(difficulty)
+    .collection("players");
+
+  const snapshot = await ref.get();
+
+  let entries = [];
+
+  snapshot.forEach(doc => {
+    entries.push(doc.data());
+  });
+
+  entries.sort((a, b) => b.score - a.score);
+
+  let html = "";
+
+  if (entries.length === 0) {
+    html = "No scores yet.";
+  } else {
+
+    let top5 = entries.slice(0, 5);
+
+    for (let i = 0; i < top5.length; i++) {
+      html +=
+        (i + 1) + ". " +
+        top5[i].name +
+        " - " +
+        top5[i].score +
+        "<br>";
+    }
+  }
+
+  document.getElementById("leaderboardList").innerHTML = html;
 }
