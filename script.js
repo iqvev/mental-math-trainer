@@ -1,3 +1,4 @@
+console.log("SCRIPT LOADED OK");
 const firebaseConfig = {
   apiKey: "...",
   authDomain: "...",
